@@ -99,7 +99,7 @@ st.markdown(f"""
 # 2. تحميل النموذج (الاحتفاظ بالذاكرة عبر @st.cache_resource)
 # ================================================================
 # ملاحظة: تأكدي من استبدال هذا برابط نموذجك الفعلي
-MODEL_ID = "asafaya/gpt2-arabic-med" # نموذج عربي مؤقت للتجربة
+MODEL_ID = "ABMZD/hassaniya-gpt2-model" # نموذج عربي مؤقت للتجربة
 
 @st.cache_resource
 def load_model_and_tokenizer(model_id):
