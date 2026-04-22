@@ -3,49 +3,61 @@ import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 # ================================================================
-# 1. إعدادات الصفحة والجمالية (Premium UI)
+# 1. إعدادات الصفحة والجماليات (High-Contrast UI)
 # ================================================================
 st.set_page_config(
-    page_title="Hassaniya AI - المساعد الذكي", 
+    page_title="Hassaniya AI Chatbot", 
     page_icon="🇲🇷",
     layout="centered"
 )
 
-# إضافة CSS مخصص لتصميم "صحراوي" عصري
+# إضافة CSS مخصص للتباين العالي والوضوح
 st.markdown("""
     <style>
-    /* خلفية الصفحة */
+    /* خلفية الصفحة - لون رملي فاتح وواضح */
     .stApp {
-        background: linear-gradient(180deg, #fdfcfb 0%, #e2d1c3 100%);
+        background-color: #FDF5E6;
     }
     
-    /* تصميم فقاعات الدردشة */
-    .stChatMessage {
-        border-radius: 20px;
-        padding: 15px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    /* تحسين شكل العناوين */
+    h1, h2, h3, p {
+        color: #2D241E !important; /* بني غامق جداً للوضوح */
+    }
+
+    /* تصميم فقاعة المستخدم - لون بني مع نص أبيض */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessage"] .st-emotion-cache-1c7n2ka) {
+        background-color: #8B4513 !important;
+        color: white !important;
     }
     
-    /* تحسين العناوين */
-    h1 {
-        color: #4a3f35;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans_serif;
-        text-align: center;
+    /* تصميم فقاعة المساعد - لون أبيض مع نص بني غامق */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessage"] .st-emotion-cache-1c7n2ka) {
+        /* هذا الجزء يتم التحكم به عبر Streamlit افتراضياً، 
+           سنعتمد على الألوان الافتراضية للفقاعات مع تحسين النص */
+    }
+
+    /* تخصيص لون النص داخل الفقاعات لضمان الوضوح */
+    .stChatMessage p {
+        color: #2D241E !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* تحسين شكل شريط الإدخال */
+    .stChatInputContainer {
+        padding-bottom: 20px;
     }
     
     /* تصميم الأزرار السريعة */
     .stButton>button {
-        border-radius: 20px;
-        border: 1px solid #d2b48c;
+        border-radius: 10px;
+        border: 2px solid #8B4513;
         background-color: white;
-        color: #4a3f35;
-        transition: all 0.3s ease;
+        color: #8B4513;
+        font-weight: bold;
     }
     .stButton>button:hover {
-        background-color: #d2b48c;
+        background-color: #8B4513;
         color: white;
-        transform: scale(1.05);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -53,7 +65,8 @@ st.markdown("""
 # ================================================================
 # 2. تحميل النموذج (الأساس التقني)
 # ================================================================
-MODEL_ID = "ABMZD/hassaniya-gpt2-model" # استبدله برابط نموذجك
+# استبدل 'your-username/hassaniya-gpt2-model' برابط نموذجك في Hugging Face
+MODEL_ID = "ABMZD/hassaniya-gpt2-model" 
 
 @st.cache_resource
 def load_model_and_tokenizer(model_id):
@@ -70,32 +83,49 @@ def load_model_and_tokenizer(model_id):
 tokenizer, model, device = load_model_and_tokenizer(MODEL_ID)
 
 # ================================================================
-# 3. واجهة المستخدم (Sidebar Dashboard)
+# 3. منطق التوليد (Inference Logic)
 # ================================================================
+def generate_response(prompt):
+    if tokenizer is None or model is None:
+        return "عذراً، حدث خطأ في تحميل النموذج."
+    
+    inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
+    outputs = model.generate(
+        inputs, 
+        max_length=60, 
+        do_sample=True, 
+        top_k=50, 
+        top_p=0.95, 
+        temperature=0.7, 
+        pad_token_id=tokenizer.eos_token_id
+    )
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response.replace(prompt, "").strip()
+
+# ================================================================
+# 4. واجهة المستخدم (UI Layout)
+# ================================================================
+
+# شريط جانبي احترافي
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/6134/6134065.png", width=80)
-    st.title("لوحة التحكم ⚙️")
-    st.markdown("---")
+    st.title("🇲🇷 عن المشروع")
+    st.info("""
+    **المشروع:** تدريب نموذج لغوي للحسانية.
+    **الهدف:** دعم اللغات ذات الموارد المحدودة.
+    """)
+    st.divider()
+    st.write("🛠️ **التقنيات:**")
+    st.caption("- Transformers (GPT-2)")
+    st.caption("- PyTorch")
+    st.caption("- Streamlit")
     
-    # عرض إحصائيات النموذج بشكل احترافي
-    st.subheader("📊 معلومات النموذج")
-    col1, col2 = st.columns(2)
-    col1.metric("البارامترات", "9M")
-    col2.metric("الحالة", "نشط ✅")
-    
-    st.write("**اللغة:** الحسانية (Hassaniya)")
-    st.write("**النوع:** Small Language Model")
-    
-    st.markdown("---")
     if st.button("🗑️ مسح المحادثة"):
         st.session_state.messages = []
         st.rerun()
 
-# ================================================================
-# 4. منطق الدردشة والتفاعل
-# ================================================================
-st.title("🇲🇷 مساعد الحسانية الذكي")
-st.markdown("<p style='text-align: center; color: #6b5b4b;'>تحدث مع الذكاء الاصطناعي بلهجة أهل الصحراء</p>", unsafe_allow_html=True)
+# العنوان الرئيسي
+st.title("💬 مساعد الحسانية الذكي")
+st.markdown("<p style='text-align: center;'>اسألني عن التقاليد، الطعام، أو الحياة في الصحراء</p>", unsafe_allow_html=True)
 
 # إنشاء ذاكرة المحادثة
 if "messages" not in st.session_state:
@@ -107,40 +137,39 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- الميزة الجديدة: الأزرار السريعة (Quick Prompts) ---
-st.write("💡 **جرب هذه الأسئلة:**")
+st.write("💡 **اقتراحات سريعة:**")
 cols = st.columns(3)
-prompts = ["كيف حالك؟", "أتاي في المحظرة؟", "الخيمة في الصحراء؟"]
+quick_prompts = ["كيف حالك؟", "أتاي في المحظرة؟", "الخيمة في الصحراء؟"]
 
-for i, p in enumerate(prompts):
+for i, p in enumerate(quick_prompts):
     if cols[i % 3].button(p):
-        # محاكاة إرسال السؤال
+        # إضافة سؤال المستخدم
         st.session_state.messages.append({"role": "user", "content": p})
         with st.chat_message("user"):
             st.markdown(p)
         
-        # توليد الرد
+        # توليد رد المساعد
         with st.chat_message("assistant"):
-            with st.spinner("يفكر..."):
-                inputs = tokenizer.encode(p, return_tensors="pt").to(device)
-                outputs = model.generate(inputs, max_length=50, do_sample=True, temperature=0.7, pad_token_id=tokenizer.eos_token_id)
-                response = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(p, "").strip()
-                st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.rerun()
+            with st.spinner("جاري التفكير..."):
+                res = generate_response(p)
+                st.markdown(res)
+        st.session_state.messages.append({"role": "assistant", "content": res})
+        st.rerun() # تحديث الواجهة فوراً
 
-st.markdown("---")
+st.divider()
 
 # إدخال المستخدم
 if prompt := st.chat_input("اكتب سؤالك هنا..."):
+    # 1. عرض رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # 2. توليد ورد المساعد
     with st.chat_message("assistant"):
-        with st.spinner("يفكر..."):
-            inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
-            outputs = model.generate(inputs, max_length=50, do_sample=True, temperature=0.7, pad_token_id=tokenizer.eos_token_id)
-            response = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
+        with st.spinner("جاري التفكير..."):
+            response = generate_response(prompt)
             st.markdown(response)
     
+    # 3. حفظ الرد
     st.session_state.messages.append({"role": "assistant", "content": response})
