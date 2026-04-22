@@ -421,35 +421,134 @@ st.markdown("""
     padding-bottom: 12px;
 }
 
-/* ── Streamlit المدخلات: إخفاء وتغيير ── */
-.stTextInput > div > div > input,
-.stTextArea textarea {
+/* ── إخفاء تام لـ st.chat_input الافتراضي ── */
+[data-testid="stChatInput"] { display: none !important; }
+
+/* ── شريط الإدخال المخصص ── */
+.custom-input-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #F7F0E3;
+    border-top: 1px solid rgba(139,107,66,0.22);
+    padding: 14px 32px 18px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.custom-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    direction: rtl;
+}
+
+/* تعديل حقل النص من Streamlit */
+.custom-input-bar .stTextInput {
+    flex: 1;
+    margin: 0 !important;
+}
+
+.custom-input-bar .stTextInput > div {
+    padding: 0 !important;
+}
+
+.custom-input-bar .stTextInput > div > div {
+    border: none !important;
+    padding: 0 !important;
+}
+
+.custom-input-bar .stTextInput input {
     direction: rtl !important;
     text-align: right !important;
     font-family: 'Noto Sans Arabic', sans-serif !important;
     background: #FFFFFF !important;
-    border: 0.5px solid rgba(139,107,66,0.3) !important;
-    border-radius: 12px !important;
+    border: 1px solid rgba(139,107,66,0.35) !important;
+    border-radius: 14px !important;
     color: #1A1208 !important;
-    padding: 10px 14px !important;
-    font-size: 14px !important;
+    padding: 13px 18px !important;
+    font-size: 14.5px !important;
+    height: 50px !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    width: 100% !important;
 }
 
-.stButton > button {
-    background: #1A1208 !important;
-    color: #B8860B !important;
-    border: none !important;
-    border-radius: 10px !important;
+.custom-input-bar .stTextInput input:focus {
+    border-color: rgba(184,134,11,0.6) !important;
+    box-shadow: 0 0 0 3px rgba(184,134,11,0.1) !important;
+}
+
+.custom-input-bar .stTextInput input::placeholder {
+    color: rgba(139,107,66,0.45) !important;
     font-family: 'Noto Sans Arabic', sans-serif !important;
-    font-size: 13px !important;
-    padding: 8px 20px !important;
+    font-size: 13.5px !important;
+}
+
+/* زر الإرسال */
+.custom-input-bar .stButton > button {
+    height: 50px !important;
+    width: 50px !important;
+    min-width: 50px !important;
+    padding: 0 !important;
+    background: #1A1208 !important;
+    border: none !important;
+    border-radius: 14px !important;
+    color: #B8860B !important;
+    font-size: 20px !important;
     cursor: pointer !important;
+    transition: background 0.15s, transform 0.12s !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+
+.custom-input-bar .stButton > button:hover {
+    background: #2D1E0F !important;
+    transform: scale(1.06) !important;
+}
+
+.custom-input-bar .stButton > button:active {
+    transform: scale(0.96) !important;
+}
+
+/* تذييل داخل شريط الإدخال */
+.input-footer-note {
+    text-align: center;
+    font-size: 10px;
+    color: rgba(139,107,66,0.38);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.03em;
+    margin-top: 2px;
+}
+
+/* مساحة سفلية لتعويض الشريط الثابت */
+.bottom-spacer {
+    height: 100px;
+}
+
+/* زر مسح المحادثة في الشريط الجانبي */
+[data-testid="stSidebar"] .stButton > button {
+    background: rgba(184,134,11,0.1) !important;
+    border: 0.5px solid rgba(184,134,11,0.3) !important;
+    border-radius: 8px !important;
+    color: #B8860B !important;
+    font-family: 'Noto Sans Arabic', sans-serif !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    width: 100% !important;
     transition: all 0.15s !important;
 }
 
-.stButton > button:hover {
-    background: #2D1E0F !important;
-    transform: scale(1.02) !important;
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(184,134,11,0.2) !important;
+    border-color: rgba(184,134,11,0.5) !important;
+    transform: none !important;
 }
 
 /* ── رسالة ترحيبية ── */
@@ -654,60 +753,56 @@ if len(st.session_state.messages) == 0:
     </div>
     """, unsafe_allow_html=True)
 
+# مساحة سفلية لتعويض الشريط الثابت
+st.markdown('<div class="bottom-spacer"></div>', unsafe_allow_html=True)
+
 # ================================================================
-# 7. خانة الإدخال
+# 7. شريط الإدخال الثابت في الأسفل
 # ================================================================
 import datetime
 
-with st.container():
-    prompt = st.chat_input("اكتب سؤالك بالحسانية هنا...")
+st.markdown('<div class="custom-input-bar">', unsafe_allow_html=True)
+st.markdown('<div class="custom-input-row">', unsafe_allow_html=True)
+
+col_input, col_btn = st.columns([10, 1])
+
+with col_input:
+    user_input = st.text_input(
+        label="",
+        placeholder="اكتب سؤالك بالحسانية هنا...",
+        key="user_input_field",
+        label_visibility="collapsed"
+    )
+
+with col_btn:
+    send_clicked = st.button("⬆", key="send_btn")
+
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="input-footer-note">صنع بكل حب لدعم اللغة الحسانية 🇲🇷 — Oumoukelthoum Sidenna</div>',
+    unsafe_allow_html=True
+)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# معالجة الإرسال (بالضغط على Enter أو الزر)
+prompt = None
+if send_clicked and user_input.strip():
+    prompt = user_input.strip()
+elif user_input.strip() and st.session_state.get("last_input") != user_input.strip():
+    # كشف الضغط على Enter عبر تغيير القيمة
+    prompt = user_input.strip()
 
 if prompt:
+    st.session_state["last_input"] = prompt
     now = datetime.datetime.now().strftime("%H:%M")
 
     # حفظ وعرض رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt, "time": now})
-    st.markdown(f"""
-    <div class="msg-row user-row">
-        <div class="avatar avatar-user">أنت</div>
-        <div>
-            <div class="bubble bubble-user">{prompt}</div>
-            <div class="bubble-time">{now}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
     # توليد الرد
     with st.spinner(""):
-        st.markdown("""
-        <div class="msg-row">
-            <div class="avatar avatar-ai">ح</div>
-            <div class="typing-bubble">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         response = generate_response(prompt)
 
-    # عرض وحفظ الرد
+    # حفظ رد النموذج
     st.session_state.messages.append({"role": "assistant", "content": response, "time": now})
-    st.markdown(f"""
-    <div class="msg-row">
-        <div class="avatar avatar-ai">ح</div>
-        <div>
-            <div class="bubble bubble-ai">{response}</div>
-            <div class="bubble-time">{now}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ================================================================
-# 8. تذييل الصفحة
-# ================================================================
-st.markdown("""
-<div class="footer-note">
-    صنع بكل حب لدعم اللغة الحسانية 🇲🇷 — Oumoukelthoum Sidenna
-</div>
-""", unsafe_allow_html=True)
+    st.rerun()
