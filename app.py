@@ -1,195 +1,156 @@
 import streamlit as st
 import torch
-import time
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 # ================================================================
-# 1. إعدادات الصفحة
+# 1. إعدادات الصفحة والتصميم المتقدم (UI/UX Customization)
 # ================================================================
 st.set_page_config(
-    page_title="Hassaniya AI Chatbot",
+    page_title="Hassaniya AI | مساعد الحسانية", 
     page_icon="🇲🇷",
     layout="centered"
 )
 
-# ================================================================
-# 2. CSS احترافي (شكل حديث)
-# ================================================================
+# تصميم CSS متطور لدعم العربية وجمالية الواجهة
 st.markdown("""
-<style>
-
-/* خلفية */
-body {
-    background-color: #0e1117;
-    color: white;
-}
-
-/* العنوان */
-h1 {
-    text-align: center;
-    color: #58a6ff;
-}
-
-/* الشات */
-.stChatMessage {
-    border-radius: 15px;
-    padding: 12px;
-    margin-bottom: 10px;
-    font-size: 15px;
-    line-height: 1.6;
-}
-
-/* المستخدم */
-[data-testid="stChatMessage-user"] {
-    background-color: #1f6feb;
-    color: white;
-    border-radius: 15px 15px 0px 15px;
-}
-
-/* البوت */
-[data-testid="stChatMessage-assistant"] {
-    background-color: #262730;
-    border-radius: 15px 15px 15px 0px;
-}
-
-/* إدخال */
-.stChatInputContainer {
-    background-color: #0e1117;
-    border-top: 1px solid #333;
-    padding: 15px;
-}
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background-color: #161b22;
-}
-
-/* زر */
-button {
-    border-radius: 10px !important;
-}
-
-/* Hover */
-.stChatMessage:hover {
-    transform: scale(1.01);
-    transition: 0.2s;
-}
-
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+        text-align: right;
+    }
+    .stChatMessage {
+        flex-direction: row-reverse !important; /* عكس اتجاه فقاعات الدردشة */
+        text-align: right !important;
+    }
+    .main {
+        background-color: #f0f2f6;
+    }
+    /* تلوين شريط الجانب */
+    [data-testid="stSidebar"] {
+        background-color: #006233; /* الأخضر الموريتاني */
+        color: white;
+    }
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 20px;
+        border: 1px solid #d2a02a;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # ================================================================
-# 3. تحميل النموذج
+# 2. تحميل النموذج مع معالجة ذكية للـ Tokens
 # ================================================================
 MODEL_ID = "ABMZD/hassaniya-gpt2-model"
 
 @st.cache_resource
-def load_model(model_id):
+def load_model_and_tokenizer(model_id):
     try:
         tokenizer = GPT2Tokenizer.from_pretrained(model_id)
+        # GPT-2 ليس لديه pad_token افتراضي، نستخدم eos_token بدلاً منه
+        tokenizer.pad_token = tokenizer.eos_token 
+        
         model = GPT2LMHeadModel.from_pretrained(model_id)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
         return tokenizer, model, device
     except Exception as e:
-        st.error(f"❌ خطأ في تحميل النموذج: {e}")
+        st.error(f"❌ خطأ: لم يتم العثور على النموذج. تأكد من MODEL_ID: {e}")
         return None, None, None
 
-tokenizer, model, device = load_model(MODEL_ID)
+tokenizer, model, device = load_model_and_tokenizer(MODEL_ID)
 
 # ================================================================
-# 4. توليد الرد
+# 3. منطق التوليد مع سياق المحادثة (Context-Aware Inference)
 # ================================================================
-def generate_response(prompt):
+def generate_response(prompt, history):
     if tokenizer is None or model is None:
-        return "❌ النموذج غير متوفر حالياً"
+        return "المعذرة، النموذج غير جاهز حالياً."
 
-    inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
-
-    outputs = model.generate(
-        inputs,
-        max_length=100,
-        do_sample=True,
-        top_k=50,
-        top_p=0.95,
-        temperature=0.7,
-        no_repeat_ngram_size=2,
-        pad_token_id=tokenizer.eos_token_id
-    )
-
-    return tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
+    # بناء السياق: نأخذ آخر رسالتين ليفهم النموذج مجرى الحديث
+    context = ""
+    for msg in history[-2:]:  
+        context += f"User: {msg['content']}\nAssistant: "
+    
+    full_prompt = context + prompt + "\nAssistant:"
+    
+    inputs = tokenizer.encode(full_prompt, return_tensors="pt").to(device)
+    
+    with torch.no_grad():
+        outputs = model.generate(
+            inputs, 
+            max_new_tokens=150, # توليد نص جديد بطول مناسب
+            do_sample=True, 
+            top_k=40, 
+            top_p=0.92, 
+            temperature=0.8,
+            no_repeat_ngram_size=3,
+            pad_token_id=tokenizer.eos_token_id
+        )
+    
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # تنظيف الرد لاستخراج إجابة المساعد فقط
+    clean_response = response.split("Assistant:")[-1].strip()
+    return clean_response
 
 # ================================================================
-# 5. Sidebar
+# 4. واجهة المستخدم (Interface)
 # ================================================================
+
+# Sidebar
 with st.sidebar:
-    st.markdown("## 🤖 Hassaniya AI")
-    st.markdown("---")
-
-    st.markdown("### 📌 عن المشروع")
-    st.write("نموذج ذكاء اصطناعي للهجة الحسانية")
-
-    st.markdown("### ⚙️ التقنيات")
-    st.write("• GPT-2")
-    st.write("• Transformers")
-    st.write("• Streamlit")
-
-    st.markdown("---")
-
-    if st.button("🗑️ مسح المحادثة"):
+    st.markdown("<h1 style='text-align: center;'>🇲🇷</h1>", unsafe_allow_html=True)
+    st.title("مساعد الحسانية الذكي")
+    st.write("أول نموذج ذكاء اصطناعي متخصص في اللهجة الحسانية الموريتانية.")
+    
+    st.divider()
+    
+    # إحصائيات سريعة تعطي طابعاً احترافياً
+    col1, col2 = st.columns(2)
+    col1.metric("اللغة", "الحسانية")
+    col2.metric("الإصدار", "V1.0")
+    
+    if st.button("🗑️ مسح الذاكرة"):
         st.session_state.messages = []
         st.rerun()
 
-# ================================================================
-# 6. العنوان
-# ================================================================
-st.markdown("<h1>🇲🇷 Hassaniya AI Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<center style='color: gray;'>تحدث بالحسانية مع الذكاء الاصطناعي</center>", unsafe_allow_html=True)
+# Main Chat Area
+st.markdown("## مرحباً بك في فضاء الحسانية ✨")
+st.info("جرب تسألني: 'كيف حالك؟' أو 'أحكي لي عن تقاليد العرس'")
 
-# ================================================================
-# 7. الذاكرة
-# ================================================================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض المحادثة
+# عرض الرسائل
 for message in st.session_state.messages:
-    avatar = "🧑" if message["role"] == "user" else "🤖"
+    avatar = "👤" if message["role"] == "user" else "🤖"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# ================================================================
-# 8. إدخال المستخدم
-# ================================================================
-if prompt := st.chat_input("اكتب سؤالك بالحسانية..."):
-
+# إدخال المستخدم
+if user_input := st.chat_input("تكلم معاي بالحسانية..."):
+    
     # عرض رسالة المستخدم
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="🧑"):
-        st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user", avatar="👤"):
+        st.markdown(user_input)
 
-    # رد البوت
+    # توليد الرد
     with st.chat_message("assistant", avatar="🤖"):
-        with st.spinner("يفكر..."):
-            response = generate_response(prompt)
+        with st.spinner("نخمم..."): # كلمة حسانية بمعنى (أفكر)
+            ai_response = generate_response(user_input, st.session_state.messages[:-1])
+            if not ai_response: 
+                ai_response = "ماني فاهمك زين، حاول توضح لي."
+            st.markdown(ai_response)
+    
+    st.session_state.messages.append({"role": "assistant", "content": ai_response})
 
-            # تأثير الكتابة
-            placeholder = st.empty()
-            full_text = ""
-
-            for word in response.split():
-                full_text += word + " "
-                time.sleep(0.03)
-                placeholder.markdown(full_text)
-
-    # حفظ الرد
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
-# ================================================================
-# 9. Footer
-# ================================================================
+# تذييل احترافي
 st.markdown("---")
-st.markdown(
-    "<center style='color: gray;'>صنع لدعم اللغة الحسانية 🇲🇷</center>",
-    unsafe_allow_html=True
-)
+st.caption("تطوير: **Oumoukelthoum Sidenna** | جميع الحقوق محفوظة لتعزيز المحتوى الموريتاني 2024")
