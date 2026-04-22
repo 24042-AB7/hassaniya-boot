@@ -12,7 +12,7 @@ st.write("تحدث مع النموذج باللغة الحسانية (تجربة
 @st.cache_resource # هذه الميزة تجعل التطبيق سريعاً جداً
 def load_model():
     # استبدل YOUR_USERNAME باسم حسابك في Hugging Face
-    model_id = "your-username/hassaniya-gpt2-model" 
+    model_id = "ABMZD/hassaniya-gpt2-model" 
     tokenizer = GPT2Tokenizer.from_pretrained(model_id)
     model = GPT2LMHeadModel.from_pretrained(model_id)
     device = "cuda" if torch.cuda.is_available() else "cpu"
