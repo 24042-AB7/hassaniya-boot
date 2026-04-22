@@ -14,7 +14,7 @@ st.write("تحدث مع النموذج باللغة الحسانية (تجربة
 # 2. تحميل النموذج (استخدم اسم مستخدمك واسم النموذج من Hugging Face)
 # ================================================================
 # استبدل 'your-username/hassaniya-gpt2-model' بالرابط الصحيح الخاص بك
-MODEL_ID = "your-username/hassaniya-gpt2-model" 
+MODEL_ID = "ABMZD/hassaniya-gpt2-model" 
 
 @st.cache_resource
 def load_model_and_tokenizer(model_id):
