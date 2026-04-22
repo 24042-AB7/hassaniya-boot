@@ -32,7 +32,7 @@ st.markdown("""
 # 2. تحميل النموذج (الاحتفاظ بالذاكرة عبر @st.cache_resource)
 # ================================================================
 # استبدل 'your-username/hassaniya-gpt2-model' برابط نموذجك في Hugging Face
-MODEL_ID = "your-username/hassaniya-gpt2-model"
+MODEL_ID = "ABMZD/hassaniya-gpt2-model"
 
 @st.cache_resource
 def load_model_and_tokenizer(model_id):
