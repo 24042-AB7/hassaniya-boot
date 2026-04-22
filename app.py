@@ -94,7 +94,7 @@ with st.sidebar:
 
 # العنوان الرئيسي في وسط الصفحة
 st.title("💬 مساعد الحسانية الذكي ولل العشوائي")
-st.caption("سول خلي اتجيك ارواي عشوائية")
+st.caption("سول خلي اتجيك ارواية عشوائية")
 
 # إنشاء "ذاكرة" للمحادثة باستخدام session_state
 if "messages" not in st.session_state:
