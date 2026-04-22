@@ -93,8 +93,8 @@ with st.sidebar:
         st.rerun()
 
 # العنوان الرئيسي في وسط الصفحة
-st.title("💬 مساعد الحسانية الذكي")
-st.caption("اسأل عن التقاليد، الطعام، أو الحياة في الصحراء")
+st.title("💬 مساعد الحسانية الذكي ولل العشوائي")
+st.caption("سول خلي اتجيك ارواي عشوائية")
 
 # إنشاء "ذاكرة" للمحادثة باستخدام session_state
 if "messages" not in st.session_state:
@@ -106,7 +106,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # منطقة إدخال المستخدم (Chat Input)
-if prompt := st.chat_input("اكتب سؤالك بالحسانية هنا..."):
+if prompt := st.chat_input("غايتك شنه؟..."):
     
     # 1. عرض رسالة المستخدم في الواجهة
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -115,7 +115,7 @@ if prompt := st.chat_input("اكتب سؤالك بالحسانية هنا..."):
 
     # 2. توليد وإظهار رد النموذج
     with st.chat_message("assistant"):
-        with st.spinner("يفكر..."):
+        with st.spinner("حني اشوي..."):
             response = generate_response(prompt)
             st.markdown(response)
     
@@ -124,4 +124,4 @@ if prompt := st.chat_input("اكتب سؤالك بالحسانية هنا..."):
 
 # تذييل الصفحة
 st.markdown("---")
-st.markdown("<center style='color: gray;'>صنع بكل حب لدعم اللغة الحسانية 🇲🇷</center>", unsafe_allow_html=True)
+st.markdown("<center style='color: gray;'> </center>", unsafe_allow_html=True)
